@@ -11,45 +11,32 @@ class MidiAnalyzer:
             }
         }
 
+    RETURN_TYPES = ("FLOAT", "LIST")
+    FUNCTION = "analyze_midi"
+    CATEGORY = "MIDI"
 
-def analyze_midi(file_path):
-    midi = MidiFile(file_path)
-    
-    # Wejście: Ścieżka do pliku MIDI
-    file_path = workflow.get_input("file_path")
+    def analyze_midi(self, file_path):
+        midi = MidiFile(file_path)
+        
+        tempo_info = []
+        notes_info = []
 
-    # Analiza pliku MIDI
-    result = analyze_midi(file_path)
+        for track in midi.tracks:
+            for msg in track:
+                if msg.type == 'set_tempo':
+                    tempo_bpm = mido.tempo2bpm(msg.tempo)
+                    tempo_info.append({"time": msg.time, "tempo": tempo_bpm})
+                elif msg.type in ['note_on', 'note_off']:
+                    notes_info.append({
+                        "type": msg.type,
+                        "channel": msg.channel,
+                        "note_number": msg.note,
+                        "velocity": msg.velocity,
+                        "time": msg.time
+                    })
 
-    # Wyjścia: Tempo i Nuty
-    workflow.set_output("tempo", result["tempo"])
-    workflow.set_output("notes", result["notes"])
+        return (tempo_info, notes_info)
 
-def analyze_midi(file_path):
-    midi = MidiFile(file_path)
-    
-    tempo_info = []
-    notes_info = []
-
-    for track in midi.tracks:
-        for msg in track:
-            if msg.type == 'set_tempo':
-                tempo_bpm = mido.tempo2bpm(msg.tempo)
-                tempo_info.append({"time": msg.time, "tempo": tempo_bpm})
-            elif msg.type in ['note_on', 'note_off']:
-                notes_info.append({
-                    "type": msg.type,
-                    "channel": msg.channel,
-                    "note_number": msg.note,
-                    "velocity": msg.velocity,
-                    "time": msg.time
-                })
-
-    return {
-        "tempo": tempo_info if tempo_info else None,
-        "notes": notes_info
-    }  
-    
 # Definicja NODE_CLASS dla ComfyUI
 MIDI_ANALYZER_NODE_CLASS_MAPPINGS = {
     "MidiAnalyzer": MidiAnalyzer,
@@ -59,4 +46,5 @@ MIDI_ANALYZER_NODE_CLASS_MAPPINGS = {
 MIDI_ANALYZER_NODE_DISPLAY_NAME_MAPPINGS = {
     "MidiAnalyzer": "Midi Analyzer",
 }
+
     
