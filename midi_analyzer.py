@@ -1,84 +1,70 @@
 import mido
 from mido import MidiFile, tempo2bpm
-from collections import defaultdict
+import logging  # Dodano import modułu logging
 
-class MidiAnalyzer:
+# Konfiguracja logowania
+logging.basicConfig(level=logging.INFO)  # Można zmienić na logging.WARNING, aby wyłączyć debugowanie
+
+class MidiReader:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "file_path": ("STRING", {"default": "path/to/your/midi/file.mid"}),
-                "ppq": ("INT", {"default": 192})  # Dodanie parametru ppq
+                "file_path": ("STRING", {"default": "D:\\INPUTS\\120_3notes.mid"})                
             }
         }
 
-    RETURN_TYPES = ("FLOAT", "LIST", "LIST")  # Zmienione zwracane typy na FLOAT, LIST, LIST
-    FUNCTION = "analyze_midi"
+    RETURN_TYPES = ("MIDI Data", "STRING")  # Zwraca dane MIDI i listę unikalnych nut
+    RETURN_NAMES = ("MIDI Data", "unique_notes")  # Nazwy wyjść
+    FUNCTION = "read_midi"
     CATEGORY = "MIDI"
 
-    def analyze_midi(self, file_path, ppq):
+    def read_midi(self, file_path):
         try:
             midi_file = MidiFile(file_path)
         except Exception as e:
+            logging.error(f"Error opening MIDI file: {e}")  # Zmieniono print na logging.error
             raise Exception(f"Error opening MIDI file: {e}")
 
-        # Inicjalizacja zmiennych do śledzenia czasu
-        current_time_ticks = 0.0
-        tempo_info = []
-        notes_info = defaultdict(list)
-        tempo = 500000  # Domyślne tempo MIDI (120 BPM)
-
-        debug_info = []  # Lista do przechowywania debugowych informacji
+        # Inicjalizacja zmiennych do śledzenia czasu i unikalnych nut
+        current_time = 0.0
+        midi_data = []  # Lista do przechowywania danych MIDI
+        unique_notes = set()  # Zbiór unikalnych numerów nut
 
         for message in midi_file:
-            # Dodaj delta czasu w tickach do bieżącego czasu
-            current_time_ticks += message.time
+            current_time += message.time
 
-            # Debugowanie wartości
-            debug_info.append(f"Message: {message}, Time in Ticks: {current_time_ticks}, Time in Seconds: {current_time_ticks}")
+            # Tworzymy słownik z informacjami o wiadomości
+            message_data = {
+                "type": message.type,  # Typ wiadomości (np. 'note_on', 'note_off', 'meta')
+                "note": getattr(message, "note", None),  # Numer nuty (jeśli dotyczy)
+                "velocity": getattr(message, "velocity", None),  # Prędkość (jeśli dotyczy)
+                "time": message.time,  # Czas do następnej wiadomości
+                "clip_time": current_time,  # Czas od początku utworu
+                "meta": message.is_meta,  # Czy to wiadomość meta (np. 'track_name', 'set_tempo')
+                "meta_type": getattr(message, "type", None) if message.is_meta else None,  # Typ wiadomości meta
+            }
 
-            if message.type == 'set_tempo':
-                bpm = tempo2bpm(message.tempo)
-                tempo_info.append({"time": current_time_ticks, "tempo": bpm})
-                tempo = message.tempo  # Aktualizuj obecne tempo
-            elif message.type == 'note_on' and message.velocity > 0:
-                notes_info[message.note].append({
-                    "start_time": current_time_ticks,
-                    "velocity": message.velocity
-                })
-            elif message.type == 'note_off':
-                for note_data in reversed(notes_info[message.note]):
-                    if "end_time" not in note_data:
-                        note_data["end_time"] = current_time_ticks
-                        break
-            elif message.type == 'note_on' and message.velocity == 0:
-                # Traktuj kompresję jako note_off
-                for note_data in reversed(notes_info[message.note]):
-                    if "end_time" not in note_data:
-                        note_data["end_time"] = current_time_ticks
-                        break
+            # Dodaj numer nuty do zbioru, jeśli to wiadomość note_on
+            if message.type == "note_on":
+                unique_notes.add(message.note)
 
-        # Przekonwertuj defaultdict na listę dla łatwiejszego przetwarzania
-        notes_list = []
-        for note_number, note_data_list in notes_info.items():
-            for note_data in note_data_list:
-                if "end_time" not in note_data:
-                    # Jeśli end_time nie jest ustawione, użyj ostatniej znanej wartości czasu
-                    note_data["end_time"] = current_time_ticks
-                notes_list.append({
-                    "note_number": note_number,
-                    **note_data
-                })
+            # Dodajemy dane do listy
+            midi_data.append(message_data)
 
-        # Zwracaj tempo_info jako pierwszą wartość, notes_list jako drugą wartość i debug_info jako trzecią wartość
-        return (tempo, notes_list, debug_info)
+        # Konwersja zbioru unikalnych nut na posortowaną listę
+        unique_notes_list = sorted(unique_notes)
+        unique_notes_str = ",".join(map(str, unique_notes_list))
+
+        logging.info("Debug: MIDI data processed successfully")  # Zmieniono print na logging.info
+        return (midi_data, unique_notes_str)
 
 # Definicja NODE_CLASS dla ComfyUI
 MIDI_ANALYZER_NODE_CLASS_MAPPINGS = {
-    "MidiAnalyzer": MidiAnalyzer,
+    "MidiReader": MidiReader,
 }
 
 # Dodanie definicji NODE_DISPLAY_NAME_MAPPINGS
 MIDI_ANALYZER_NODE_DISPLAY_NAME_MAPPINGS = {
-    "MidiAnalyzer": "Midi Analyzer",
+    "MidiReader": "Midi Reader",
 }
