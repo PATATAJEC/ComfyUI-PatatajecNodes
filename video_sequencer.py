@@ -124,6 +124,7 @@ class VideoSequencer:
         logging.info("Debug: Final sequence structure: %s", frame_sequence)
         return ({"sequence_structure": frame_sequence}, notes_to_vx_debug, keyframe_difference_debug, frame_sequence_str)
 
+# Zmiana nazw zmiennych mapowań
 VIDEO_SEQUENCER_NODE_CLASS_MAPPINGS = {
     "VideoSequencer": VideoSequencer,
 }

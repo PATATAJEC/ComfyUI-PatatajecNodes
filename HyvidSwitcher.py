@@ -59,12 +59,11 @@ class HyvidSwitcher:
         else:
             raise ValueError(f"Unknown variable source: {variables}")
 
-# Definicja NODE_CLASS dla ComfyUI
+# Zmiana nazw zmiennych mapowań
 HYVID_SWITCHER_NODE_CLASS_MAPPINGS = {
     "HyvidSwitcher": HyvidSwitcher,
 }
 
-# Dodanie definicji NODE_DISPLAY_NAME_MAPPINGS
 HYVID_SWITCHER_NODE_DISPLAY_NAME_MAPPINGS = {
     "HyvidSwitcher": "HyVid Switcher",
 }

@@ -54,7 +54,7 @@ Wszystkie wejścia są dynamiczne.
         # Ta metoda może być używana do walidacji wejść
         return True
 
-# Definicje mapowań
+# Zmiana nazw zmiennych mapowań
 VIDEO_COUNTER_NODE_CLASS_MAPPINGS = {
     "VideoCounter": VideoCounter,
 }

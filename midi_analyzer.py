@@ -59,12 +59,11 @@ class MidiReader:
         logging.info("Debug: MIDI data processed successfully")  # Zmieniono print na logging.info
         return (midi_data, unique_notes_str)
 
-# Definicja NODE_CLASS dla ComfyUI
+# Zmiana nazw zmiennych mapowań
 MIDI_ANALYZER_NODE_CLASS_MAPPINGS = {
     "MidiReader": MidiReader,
 }
 
-# Dodanie definicji NODE_DISPLAY_NAME_MAPPINGS
 MIDI_ANALYZER_NODE_DISPLAY_NAME_MAPPINGS = {
     "MidiReader": "Midi Reader",
 }

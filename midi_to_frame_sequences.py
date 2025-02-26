@@ -109,6 +109,7 @@ class MidiToFrameSequences:
 
         return (sorted_keyframes_by_notes, notes_by_keyframes, allowed_notes_list, end_frame, allowed_note_count)
 
+# Zmiana nazw zmiennych mapowań
 MIDI_TO_FRAME_SEQUENCES_NODE_CLASS_MAPPINGS = {
     "MidiToFrameSequences": MidiToFrameSequences,
 }

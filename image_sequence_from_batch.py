@@ -31,7 +31,7 @@ class ImageSequenceFromBatch:
 
         return (output_images,)
 
-# Mapowania dla ComfyUI
+# Zmiana nazw zmiennych mapowań
 IMAGE_SEQUENCE_FROM_BATCH_NODE_CLASS_MAPPINGS = {
     "ImageSequenceFromBatch": ImageSequenceFromBatch,
 }
