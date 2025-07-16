@@ -11,6 +11,9 @@ What it does:
 * The final string is intended to be connected to the `filename_prefix input` of a "Save Image" or similar node.
 
 ### Color Match Falloff
-**Code is modified version of Kijai's ComfyUI-KJNodes Color Match Node** [https://github.com/kijai/ComfyUI-KJNodes], and it keeps the original functionality with a small addition:
+**Code is modified version of Kijai's ComfyUI-KJNodes Color Match Node** 
+[https://github.com/kijai/ComfyUI-KJNodes]
+
+It keeps the original functionality with a small addition:
 
 Color Match Falloff node smoothly fades the color correction effect over a sequence of frames (falloff_duration). It uses an Ease-In-Out curve (from strength 1 to 0) to mitigate color flickering, making it ideal for seamlessly stitching together video clips generated in separate batches (last frame to first frame approach) using WAN2.1 model.
