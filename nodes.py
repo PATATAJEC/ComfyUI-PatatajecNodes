@@ -1,37 +1,50 @@
 import os
 import datetime
 
-class PathSwitcher:
+class PathTool:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "base_path": ("STRING", {"default": "FLUX/", "multiline": False}),
+                "filename": ("STRING", {"default": "ComfyUI", "multiline": False}),
+                "base_path": ("STRING", {"default": "Project_01/", "multiline": False}),
+                "alt_path": ("STRING", {"default": "Project_01/Alternatives/", "multiline": False}),
                 "use_alt_path": ("BOOLEAN", {"default": False}),
-                "date_format": ("STRING", {"default": "%date:yyyy_MM_dd%", "multiline": False}),
+                "date_format": ("STRING", {"default": "%Y_%m_%d", "multiline": False}),
+                "use_date_folder": ("BOOLEAN", {"default": True}),
             },
-            "optional": {
-                "alt_path": ("STRING", {"default": "FLUX/backup/", "multiline": False}),
-                "filename_template": ("STRING", {"default": "Skull&Worms", "multiline": False}),
-            }
         }
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("filename_prefix",)
     FUNCTION = "build_path"
-    CATEGORY = "filename prefix handling"
+    CATEGORY = "Filename & Path Manager"
+    DESCRIPTION = """
+### Path Tool
 
-    def build_path(self, base_path, use_alt_path, date_format, alt_path="FLUX/backup/", filename_template="Skull&Worms"):
+This node dynamically generates a filename prefix for saving files into an organized folder structure.
+
+What it does:
+* It constructs a path in the format: `[root_directory]/[current_date]/[filename]`.
+* You can choose between a primary `base_path` and an `alt_path` using a boolean toggle.
+* It automatically creates a subfolder named with the current date in YYYY_MM_DD format (e.g., 2023_10_27).
+* It sanitizes the path and filename to remove any invalid characters, ensuring a safe output.
+* The final string is intended to be connected to the `filename_prefix input` of a "Save Image" or similar node. 
+"""
+
+    def build_path(self, filename_template, base_path, alt_path, use_alt_path, date_format, use_date_folder):
         root_dir = self._clean_path(alt_path if use_alt_path else base_path)
+         path_components = [root_dir]
         
-        # Stały format daty (bez parsowania %date:...%)
-        current_date = datetime.datetime.now().strftime("%Y_%m_%d")  # Domyślny format
+        if use_date_folder:
+            current_date_str = datetime.datetime.now().strftime(date_format)
+            path_components.append(current_date_str)
+            
+        sanitized_filename = self._sanitize(filename_template)
+        path_components.append(sanitized_filename)
         
-        full_path = os.path.join(
-            root_dir,
-            current_date,
-            self._sanitize(filename_template)
-        )
+        full_path = os.path.join(*path_components)
+        
         return (os.path.normpath(full_path),)
 
     def _clean_path(self, path):
@@ -39,6 +52,10 @@ class PathSwitcher:
 
     def _sanitize(self, name):
         return "".join(c for c in name.strip() if c not in '\\/:*?"<>|')
+
+import math
+import torch
+import json 
 
 class ColorMatchFalloff:
     @classmethod
@@ -62,12 +79,12 @@ class ColorMatchFalloff:
     
     CATEGORY = "KJNodes/image"
 
-    RETURN_TYPES = ("IMAGE", "STRING")
-    RETURN_NAMES = ("image", "debug_strength_per_frame")
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
     FUNCTION = "colormatch_dynamic"
     DESCRIPTION = """
-ColorMatch z siłą dynamicznie malejącą dla KAŻDEJ kolejnej klatki w batchu.
-'falloff_duration' określa, po ilu klatkach siła ma spaść do zera.
+Code is modified version of Kijai's ComfyUI-KJNodes (https://github.com/kijai/ComfyUI-KJNodes).
+Color Match Falloff node smoothly fades the color correction effect over a sequence of frames (falloff_duration). It uses an Ease-In-Out curve (from strength 1 to 0) to mitigate color flickering, making it ideal for seamlessly stitching together video clips generated in separate batches (last frame to first frame approach) using WAN2.1 model
 """
     
     def colormatch_dynamic(self, image_ref, image_target, method, falloff_duration=50):
@@ -82,7 +99,6 @@ ColorMatch z siłą dynamicznie malejącą dla KAŻDEJ kolejnej klatki w batchu.
         batch_size = image_target_tensor.size(0)
         
         out = []
-        debug_strengths = {} # Słownik do przechowywania siły dla każdej klatki
 
         images_target_np = image_target_tensor.numpy()
         images_ref_np = image_ref_tensor.numpy()
@@ -90,24 +106,17 @@ ColorMatch z siłą dynamicznie malejącą dla KAŻDEJ kolejnej klatki w batchu.
         if image_ref_tensor.size(0) > 1 and image_ref_tensor.size(0) != batch_size:
             raise ValueError("ColorMatch: Use a single ref image or a matching batch of ref images.")
 
-        # --- LOGIKA PRZENIESIONA DO ŚRODKA PĘTLI ---
         for i in range(batch_size):
-            frame_number = i + 1 # Zaczynamy liczyć od 1, nie od 0
+            frame_number = i + 1 
             strength = 0.0
             
             if frame_number <= 1:
                 strength = 1.0
             elif frame_number <= falloff_duration:
-                # Obliczanie siły na podstawie numeru AKTUALNEJ klatki
                 normalized_frame = (frame_number - 1) / (falloff_duration - 1)
                 angle = normalized_frame * (math.pi / 2)
                 strength = math.cos(angle)
-            
-            # Zapisz siłę dla tej klatki do debugowania
-            debug_strengths[f"frame_{frame_number}"] = round(strength, 4)
-            print(f"Frame {frame_number}/{batch_size}, Strength: {strength:.4f}")
 
-            # Jeśli siła jest minimalna, możemy pominąć transfer, ale wciąż blendujemy
             if strength < 0.0001:
                 blended_image_np = images_target_np[i]
             else:
@@ -120,15 +129,12 @@ ColorMatch z siłą dynamicznie malejącą dla KAŻDEJ kolejnej klatki w batchu.
                     print(f"Error during color transfer on frame {frame_number}: {e}")
                     image_result_np = image_target_np_single
                 
-                # Blendowanie z siłą obliczoną DLA TEJ KONKRETNEJ KLATKI
                 blended_image_np = image_target_np_single + strength * (image_result_np - image_target_np_single)
             
             out.append(torch.from_numpy(blended_image_np))
             
         out_tensor = torch.stack(out, dim=0).to(torch.float32)
         out_tensor.clamp_(0, 1)
-        
-        debug_json_string = json.dumps(debug_strengths, indent=2)
-        
-        return (out_tensor, debug_json_string)
+     
+        return (out_tensor,)
         

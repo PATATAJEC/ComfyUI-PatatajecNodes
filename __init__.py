@@ -7,7 +7,7 @@ from .nodes import *
 #   - "class": Odwołanie do klasy nodu
 #   - "name": Nazwa wyświetlana w interfejsie ComfyUI
 NODE_CONFIG = {
-     "PathSwitcher": {"class": PathSwitcher, "name": "Path Switcher"},
+     "PathTool": {"class": PathTool, "name": "Path Tool"},
      "ColorMatchFalloff": {"class": ColorMatchFalloff, "name": "Color Match Falloff"},
 }
 
