@@ -1,9 +1,16 @@
 Hopefully I will be able to create some useful nodes for ComfyUI. I just started making these, using LLMs for coding purposes, with no previous coding experience. However, I can see myself learning more and more. 
 
-### HyvidSwitcher Node
+### Path Tool
+This node dynamically generates a filename prefix for saving files into an organized folder structure.
 
-The HyvidSwitcher node is a custom node designed to switch between user-defined parameters and input-based parameters. It helps with connecting chunks of workflow like v2v with i2v and was made specifically for Hunyuan Video purposes, as it formats resolutions and frame count for that specific model. It allows users to dynamically choose whether to use predefined settings or values provided as inputs with the help of a simple switch which is just a selection of modes:
-- User Defined: Uses predefined values set by the user.
-- From Input: Uses values provided as inputs to the node.
+What it does:
+* It constructs a path in the format: `[root_directory]/[current_date]/[filename]`.
+* You can choose between a primary `base_path` and an `alt_path` using a boolean toggle.
+* It automatically creates a subfolder named with the current date in YYYY_MM_DD format (e.g., 2023_10_27).
+* It sanitizes the path and filename to remove any invalid characters, ensuring a safe output.
+* The final string is intended to be connected to the `filename_prefix input` of a "Save Image" or similar node.
 
-It's simple. You can define your width, height and frame count. It changes these values automatically to be compatible with the Hunyuan Video model. It makes resolution capped between 64 and 1280, and divisible by 16. Also frame count is Hunyuan-specific, which means it allows only frame counts of 1+4n frames (1,5,9...33...129 etc.). It's then output formatted data (width, height, frame count). 
+### Color Match Falloff
+**Code is modified version of Kijai's ComfyUI-KJNodes Color Match Node** [https://github.com/kijai/ComfyUI-KJNodes], and it keeps the original functionality with a small addition:
+
+Color Match Falloff node smoothly fades the color correction effect over a sequence of frames (falloff_duration). It uses an Ease-In-Out curve (from strength 1 to 0) to mitigate color flickering, making it ideal for seamlessly stitching together video clips generated in separate batches (last frame to first frame approach) using WAN2.1 model.
