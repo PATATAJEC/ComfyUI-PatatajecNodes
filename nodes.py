@@ -34,7 +34,7 @@ What it does:
 
     def build_path(self, filename_template, base_path, alt_path, use_alt_path, date_format, use_date_folder):
         root_dir = self._clean_path(alt_path if use_alt_path else base_path)
-         path_components = [root_dir]
+        path_components = [root_dir]
         
         if use_date_folder:
             current_date_str = datetime.datetime.now().strftime(date_format)
