@@ -1,43 +1,37 @@
-import os
-import folder_paths
+# Importuj wszystkie klasy nodów z Twojego nowego, zbiorczego pliku
+from .nodes import *
 
-# Ścieżka do folderu z węzłem
-node_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Dodaj folder z węzłem do ścieżki ComfyUI
-folder_paths.add_model_folder_path("custom_nodes", node_dir)
-
-# Załaduj skrypt JavaScript
-WEB_DIRECTORY = os.path.join(node_dir, "js")
-
-# Importowanie klas węzłów
-from .HyvidSwitcher import HYVID_SWITCHER_NODE_CLASS_MAPPINGS, HYVID_SWITCHER_NODE_DISPLAY_NAME_MAPPINGS
-from .midi_analyzer import MIDI_ANALYZER_NODE_CLASS_MAPPINGS, MIDI_ANALYZER_NODE_DISPLAY_NAME_MAPPINGS
-from .midi_to_frame_sequences import MIDI_TO_FRAME_SEQUENCES_NODE_CLASS_MAPPINGS, MIDI_TO_FRAME_SEQUENCES_NODE_DISPLAY_NAME_MAPPINGS
-from .video_sequencer import VIDEO_SEQUENCER_NODE_CLASS_MAPPINGS, VIDEO_SEQUENCER_NODE_DISPLAY_NAME_MAPPINGS
-from .video_counter import VIDEO_COUNTER_NODE_CLASS_MAPPINGS, VIDEO_COUNTER_NODE_DISPLAY_NAME_MAPPINGS
-from .image_sequence_from_batch import IMAGE_SEQUENCE_FROM_BATCH_NODE_CLASS_MAPPINGS, IMAGE_SEQUENCE_FROM_BATCH_NODE_DISPLAY_NAME_MAPPINGS
-from .PathSwitcher import PATH_SWITCHER_NODE_CLASS_MAPPINGS, PATH_SWITCHER_NODE_DISPLAY_NAME_MAPPINGS
-
-# Łączenie mapowań
-NODE_CLASS_MAPPINGS = {
-    **HYVID_SWITCHER_NODE_CLASS_MAPPINGS,
-    **MIDI_ANALYZER_NODE_CLASS_MAPPINGS,
-    **MIDI_TO_FRAME_SEQUENCES_NODE_CLASS_MAPPINGS,
-    **VIDEO_SEQUENCER_NODE_CLASS_MAPPINGS,
-    **VIDEO_COUNTER_NODE_CLASS_MAPPINGS,
-    **IMAGE_SEQUENCE_FROM_BATCH_NODE_CLASS_MAPPINGS,
-    **PATH_SWITCHER_NODE_CLASS_MAPPINGS,
+# Definicja centralnej konfiguracji nodów
+# Klucz: Wewnętrzna nazwa nodu (unikalna)
+# Wartość: Słownik zawierający:
+#   - "class": Odwołanie do klasy nodu
+#   - "name": Nazwa wyświetlana w interfejsie ComfyUI
+NODE_CONFIG = {
+     "PathSwitcher": {"class": PathSwitcher, "name": "Path Switcher"},
+     "ColorMatchFalloff": {"class": ColorMatchFalloff, "name": "Color Match Falloff"},
 }
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    **HYVID_SWITCHER_NODE_DISPLAY_NAME_MAPPINGS,
-    **MIDI_ANALYZER_NODE_DISPLAY_NAME_MAPPINGS,
-    **MIDI_TO_FRAME_SEQUENCES_NODE_DISPLAY_NAME_MAPPINGS,
-    **VIDEO_SEQUENCER_NODE_DISPLAY_NAME_MAPPINGS,
-    **VIDEO_COUNTER_NODE_DISPLAY_NAME_MAPPINGS,
-    **IMAGE_SEQUENCE_FROM_BATCH_NODE_DISPLAY_NAME_MAPPINGS,
-    **PATH_SWITCHER_NODE_DISPLAY_NAME_MAPPINGS,
-}
+# UWAGA: Upewnij się, że nazwy klas (np. HyvidSwitcher, MidiAnalyzer) 
+# są dokładnie takie same jak w pliku nodes.py!
 
+# Funkcja generująca mapowania dla ComfyUI na podstawie NODE_CONFIG
+def generate_node_mappings(node_config):
+    node_class_mappings = {}
+    node_display_name_mappings = {}
+
+    for node_name, node_info in node_config.items():
+        node_class_mappings[node_name] = node_info["class"]
+        # Użyj podanej nazwy "name" lub, jeśli jej nie ma, nazwy klasy
+        node_display_name_mappings[node_name] = node_info.get("name", node_info["class"].__name__)
+
+    return node_class_mappings, node_display_name_mappings
+
+# Generowanie mapowań, które ComfyUI rozumie
+NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS = generate_node_mappings(NODE_CONFIG)
+
+# Ustawienie katalogu web i eksport zmiennych
+WEB_DIRECTORY = "./js"
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
+
+print("### Loading: Patatajec-ComfyUI (Success) ###")
+
