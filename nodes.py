@@ -1,5 +1,8 @@
 import os
 import datetime
+import math
+import torch
+import json 
 
 class PathTool:
     @classmethod
@@ -32,7 +35,7 @@ What it does:
 * The final string is intended to be connected to the `filename_prefix input` of a "Save Image" or similar node. 
 """
 
-    def build_path(self, filename_template, base_path, alt_path, use_alt_path, date_format, use_date_folder):
+    def build_path(self, filename, base_path, alt_path, use_alt_path, date_format, use_date_folder):
         root_dir = self._clean_path(alt_path if use_alt_path else base_path)
         path_components = [root_dir]
         
@@ -40,7 +43,7 @@ What it does:
             current_date_str = datetime.datetime.now().strftime(date_format)
             path_components.append(current_date_str)
             
-        sanitized_filename = self._sanitize(filename_template)
+        sanitized_filename = self._sanitize(filename)
         path_components.append(sanitized_filename)
         
         full_path = os.path.join(*path_components)
@@ -53,9 +56,6 @@ What it does:
     def _sanitize(self, name):
         return "".join(c for c in name.strip() if c not in '\\/:*?"<>|')
 
-import math
-import torch
-import json 
 
 class ColorMatchFalloff:
     @classmethod
